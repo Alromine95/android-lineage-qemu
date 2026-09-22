@@ -21,7 +21,7 @@ export PATH="$(realpath .)/bin:$PATH"
 cd android/lineage
 export PATH="$(realpath .)/prebuilts/sdk/tools/linux/bin/:$PATH"
 repo init -u https://github.com/yaap/manifest.git -b sixteen --depth=1 --git-lfs --groups=default,-mips,-x86,-darwin
-git clone https://github.com/Alromine95/Local-manifest.git -b main .repo/local_manifests
+git clone https://github.com/Alromine95/device_xiaomi_blossom.git -b 16.2 .repo/local_manifests
 repo sync -j $(nproc)
 sed -i 's/-$(LINEAGE_BUILDTYPE)/-jqssun/g' vendor/lineage/config/version.mk
 
@@ -37,9 +37,8 @@ fi
 
 source build/envsetup.sh
 
-# Lunch
-lunch yaap_blossom-bp2a-userdebug
+# 4. Let Lineage parse your lineage.dependencies and fetch the rest
+breakfast blossom
 
-# Build
-m yaap
-
+# 5. Start compilation
+brunch blossom
