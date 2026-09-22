@@ -1,6 +1,8 @@
 #!/bin/bash
 
 export DEBIAN_FRONTEND=noninteractive
+export BUILD_BROKEN_MISSING_REQUIRED_MODULES=true
+export IGNORE_PATCH_ERRORS=true
 sudo apt update
 sudo apt install -y sudo git android-sdk-platform-tools python-is-python3 python3-yaml # libncurses5
 sudo apt install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git git-lfs gnupg gperf imagemagick protobuf-compiler python3-protobuf lib32readline-dev lib32z1-dev libdw-dev libelf-dev lz4 libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev
@@ -18,15 +20,26 @@ chmod a+x bin/repo
 export PATH="$(realpath .)/bin:$PATH"
 cd android/lineage
 export PATH="$(realpath .)/prebuilts/sdk/tools/linux/bin/:$PATH"
-repo init -u https://github.com/LineageOS/android.git -b lineage-23.0 --git-lfs --no-clone-bundle
+repo init -u https://github.com/yaap/manifest.git -b sixteen --depth=1 --git-lfs --groups=default,-mips,-x86,-darwin
+git clone https://github.com/Alromine95/Local-manifest.git -b main .repo/local_manifests
 repo sync -j $(nproc)
 sed -i 's/-$(LINEAGE_BUILDTYPE)/-jqssun/g' vendor/lineage/config/version.mk
 
-source build/envsetup.sh
-export AB_OTA_UPDATER=false
+#Fixing audio files
+AUDIO_BP="hardware/interfaces/audio/common/all-versions/default/Android.bp"
+if [ -f "$AUDIO_BP" ]; then
+    echo "🔧 Fixing Audio select type condition..."
+    sed -i 's/"true":/true:/g' "$AUDIO_BP"
+    echo "✅ Audio Android.bp patched!"
+else
+    echo "⚠️ Audio Android.bp not found, skipping patch."
+fi
 
-breakfast virtio_arm64only userdebug
-m recoveryimage
-mv out/target/product/virtio_arm64only/recovery.img ../../recovery-userdebug.img
-breakfast virtio_arm64only user # breakfast virtio_arm64only
-m vm-utm-zip otapackage
+source build/envsetup.sh
+
+# Lunch
+lunch yaap_blossom-bp2a-userdebug
+
+# Build
+m yaap
+
